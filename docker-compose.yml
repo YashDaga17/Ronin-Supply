@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: ronin_postgres
+    environment:
+      POSTGRES_DB: ronin_supply
+      POSTGRES_USER: ronin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+    networks:
+      - ronin_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ronin_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ronin_network
+
+  app:
+    build: .
+    container_name: ronin_app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://ronin:password@postgres:5432/ronin_supply
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app
+    networks:
+      - ronin_network
+    profiles:
+      - full
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ronin_network:
+    driver: bridge
