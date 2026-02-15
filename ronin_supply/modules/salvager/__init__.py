@@ -1,1 +1,0 @@
-"""The Salvager - Visual grading & profit recovery engine."""
